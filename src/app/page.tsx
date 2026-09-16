@@ -108,8 +108,13 @@ export default function Home() {
   };
 
   // Convert PDF Trigger
-  const handleConvertPdf = async () => {
+  const handleConvertPdf = async (overrideTargetLang?: string) => {
+    const activeTarget = overrideTargetLang || targetLang;
     if (!uploadedFile || !textReviewed || !pagesText.some(text => text.trim())) return;
+
+    if (overrideTargetLang) {
+      setTargetLang(overrideTargetLang);
+    }
 
     setIsConverting(true);
     setProgress(5);
@@ -122,7 +127,7 @@ export default function Home() {
       const { fullText, translatedPages: translatedPagesResult } = await translatePdfContent(
         pagesText,
         sourceLang,
-        targetLang,
+        activeTarget,
         (percent, stage, snippet) => {
           setProgress(percent);
           setProgressStage(stage);
@@ -139,7 +144,7 @@ export default function Home() {
       const { url, fileName } = await generateTranslatedPdf({
         translatedPages: translatedPagesResult,
         sourceLang,
-        targetLang,
+        targetLang: activeTarget,
         originalFileName: uploadedFile.name,
       });
 
@@ -255,7 +260,7 @@ export default function Home() {
                 <button
                   type="button"
                   disabled={isParsing || isConverting || !uploadedFile || !textReviewed || !pagesText.some(text => text.trim())}
-                  onClick={handleConvertPdf}
+                  onClick={() => handleConvertPdf()}
                   className="w-full sm:w-auto min-w-[280px] inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 hover:from-violet-500 hover:via-indigo-500 hover:to-cyan-400 text-white font-black text-base shadow-xl shadow-indigo-600/30 hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>Convert PDF Document</span>
@@ -287,7 +292,10 @@ export default function Home() {
                 translatedText={translatedText}
                 sourceLangName={getLanguageByCode(sourceLang).name}
                 targetLangName={getLanguageByCode(targetLang).name}
+                targetLang={targetLang}
                 onReset={handleFileClear}
+                onReconvert={(newTargetLang) => handleConvertPdf(newTargetLang)}
+                onChangeLanguageStep={() => setIsCompleted(false)}
               />
             </section>
           )}
